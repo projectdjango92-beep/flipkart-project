@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
@@ -6,7 +7,22 @@ from django.urls import reverse
 from customers.models import Customer
 from orders.models import Order, OrderItem
 
-from .models import Product, Review
+from .models import Product, ProductImage, Review
+
+
+class CatalogueSeedTests(TestCase):
+    def test_catalogue_seed_is_repeatable(self):
+        self.assertFalse(Product.objects.exists())
+
+        call_command("seed_catalogue")
+        first_product_count = Product.objects.count()
+        first_image_count = ProductImage.objects.count()
+
+        call_command("seed_catalogue")
+        self.assertEqual(Product.objects.count(), first_product_count)
+        self.assertEqual(ProductImage.objects.count(), first_image_count)
+        self.assertEqual(first_product_count, 100)
+        self.assertEqual(first_image_count, 9)
 
 
 class ReviewAccessTests(TestCase):
