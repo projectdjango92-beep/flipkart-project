@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="page-title">
+            Customers
+        </h2>
+        <p class="text-muted">
+            Registered customers
+        </p>
+    </div>
+    <a href="{% url 'customer_create' %}"
+       class="btn btn-danger">
+        Add Customer
+    </a>
+</div>
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for customer in customers %}
+            <tr>
+                <td>
+                    #{{ customer.id }}
+                </td>
+                <td>
+                    {{ customer.user.username }}
+                </td>
+                <td>
+                    {{ customer.phone }}
+                </td>
+                <td>
+                    {{ customer.address }}
+                </td>
+                <td>
+                    <a href="{% url 'customer_update' customer.id %}"
+                       class="btn btn-sm btn-outline-primary">
+                        Edit
+                    </a>
+                    <a href="{% url 'customer_delete' customer.id %}"
+                       class="btn btn-sm btn-outline-danger">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5"
+                    class="text-center py-4">
+                    No customers available.
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

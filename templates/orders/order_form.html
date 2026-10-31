@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 form-card">
+<div class="card-body p-4">
+<h3 class="mb-4">
+    {% if order %}
+        Edit Order
+    {% else %}
+        Place Order
+    {% endif %}
+</h3>
+<form method="POST">
+{% csrf_token %}
+
+<h5 class="mb-3">
+    Food Items
+</h5>
+<div id="product-container">
+    <div class="product-row row g-2 mb-3">
+        <div class="col-md-7">
+            <select name="product"
+                    class="form-select"
+                    required>
+                <option value="">
+                    Select Food
+                </option>
+                {% for product in products %}
+                <option value="{{ product.id }}">
+                    {{ product.name }}
+                    - ₹{{ product.price }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="number"
+                   name="quantity"
+                   value="1"
+                   min="1"
+                   class="form-control"
+                   required>
+        </div>
+        <div class="col-md-2">
+            <button type="button"
+                    class="btn btn-outline-danger remove-product w-100">
+                ×
+            </button>
+        </div>
+    </div>
+</div>
+<button type="button"
+        id="add-product"
+        class="btn btn-outline-success btn-sm mb-4">
+    + Add Another Item
+</button>
+<br>
+<button type="submit"
+        class="btn btn-danger">
+    {% if order %}
+        Update Order
+    {% else %}
+        Place Order
+    {% endif %}
+</button>
+<a href="{% url 'order_list' %}"
+   class="btn btn-secondary">
+    Cancel
+</a>
+</form>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+$(document).ready(function () {
+    $("#add-product").click(function () {
+        let newRow = $(".product-row:first").clone();
+        newRow.find("select").val("");
+        newRow.find("input").val(1);
+        $("#product-container").append(newRow);
+    });
+    $(document).on(
+        "click",
+        ".remove-product",
+        function () {
+            if ($(".product-row").length > 1) {
+                $(this)
+                    .closest(".product-row")
+                    .remove();
+            }
+        }
+    );
+});
+</script>
+{% endblock %}

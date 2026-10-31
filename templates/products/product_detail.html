@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} | Bharat Mart{% endblock %}
+
+{% block content %}
+<div class="main-container product-page">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'index' %}">Home</a><span>/</span><a href="{% url 'index' %}?category={{ product.category }}#products">{{ product.get_category_display }}</a><span>/</span><span>{{ product.name }}</span></nav>
+    <section class="product-detail-panel">
+        <div class="detail-gallery">
+            <div class="detail-image-wrap">
+                {% if main_image_url %}<img id="main-product-image" src="{{ main_image_url }}" alt="{{ product.name }}" class="detail-image">{% else %}<div id="main-product-image" class="detail-image-placeholder">B</div>{% endif %}
+                <span class="detail-image-note">Bharat pick</span>
+            </div>
+            {% if gallery_images %}<div class="thumbnail-row">{% if product.image %}<button type="button" class="product-thumbnail active" data-image="{{ product.image.url }}"><img src="{{ product.image.url }}" alt="{{ product.name }}"></button>{% endif %}{% for extra_image in gallery_images %}<button type="button" class="product-thumbnail {% if not product.image and forloop.first %}active{% endif %}" data-image="{{ extra_image.image.url }}"><img src="{{ extra_image.image.url }}" alt="{{ extra_image.alt_text|default:product.name }}"></button>{% endfor %}</div>{% endif %}
+        </div>
+        <div class="detail-copy">
+            <p class="eyebrow">{{ product.get_category_display }}{% if product.brand %} · {{ product.brand }}{% endif %}</p>
+            <div class="detail-title-row"><h1>{{ product.name }}</h1><form method="post" action="{% url 'wishlist_toggle' product.pk %}" class="wishlist-heart detail-wishlist">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button type="submit" class="{% if is_wishlisted %}is-saved{% endif %}" aria-label="Toggle wishlist">{% if is_wishlisted %}&#9829;{% else %}&#9825;{% endif %}</button></form></div>
+            <div class="detail-rating"><span class="rating-pill">&#9733; {{ product.average_rating|floatformat:1 }}</span><a href="#reviews">{{ product.total_reviews }} review{{ product.total_reviews|pluralize }}</a></div>
+            <p class="detail-price">&#8377;{{ product.price }}</p>
+            {% if emi_plans %}<div class="alert alert-light border small"><strong>Estimated EMI available</strong>{% for option in emi_plans %}<br>{{ option.plan.name }}: &#8377;{{ option.monthly_amount }} / month for {{ option.plan.months }} months{% endfor %}<br><span class="text-muted">Financing approval is not provided by this store.</span></div>{% else %}<p class="small text-muted">EMI is not available for this product.</p>{% endif %}
+            <p class="stock-line detail-stock {% if not product.is_in_stock %}out-of-stock{% elif product.is_low_stock %}low-stock{% endif %}">{{ product.availability_label }}</p>
+            <div class="detail-rule"></div>
+            {% if product.description %}<div class="detail-description">{{ product.description|linebreaksbr }}</div>{% else %}<p class="detail-description">A considered find, chosen to make the everyday feel a little better.</p>{% endif %}
+            <ul class="detail-perks"><li><span>&#10003;</span> Carefully packed for the journey</li><li><span>&#10003;</span> Free delivery on orders above &#8377;499</li><li><span>&#10003;</span> Secure checkout with server-side stock checks</li></ul>
+            {% if product.sku %}<p class="product-sku">SKU: {{ product.sku }}</p>{% endif %}
+            <div class="detail-actions">
+                <button type="button" class="btn btn-flipkart detail-add add-to-cart" {% if not product.is_in_stock %}disabled{% endif %} data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-stock="{{ product.stock_quantity }}" data-product-image="{% if product.image %}{{ product.image.url }}{% endif %}">{% if product.is_in_stock %}Add to bag <span aria-hidden="true">&#8594;</span>{% else %}Out of stock{% endif %}</button>
+                {% if product.is_in_stock %}<button type="button" class="detail-back buy-now" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-stock="{{ product.stock_quantity }}" data-product-image="{% if product.image %}{{ product.image.url }}{% endif %}">Buy now</button>{% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="reviews-section" id="reviews">
+        <div class="section-intro"><div><p class="eyebrow">Customer notes</p><h2>Reviews &amp; ratings</h2><p>{{ product.total_reviews }} verified review{{ product.total_reviews|pluralize }} · average {{ product.average_rating|floatformat:1 }} / 5</p></div><form method="get" class="review-sort"><label for="review-sort">Sort</label><select id="review-sort" name="review_sort" onchange="this.form.submit()"><option value="recent" {% if review_sort == 'recent' %}selected{% endif %}>Most recent</option><option value="highest" {% if review_sort == 'highest' %}selected{% endif %}>Highest rating</option><option value="lowest" {% if review_sort == 'lowest' %}selected{% endif %}>Lowest rating</option></select></form></div>
+        {% if request.user.is_authenticated and can_review %}
+            <div class="review-form-card"><h3>{% if existing_review %}Edit your review{% else %}Share your experience{% endif %}</h3><form method="post" action="{% if existing_review %}{% url 'review_edit' existing_review.pk %}{% else %}{% url 'review_create' product.pk %}{% endif %}">{% csrf_token %}<div class="star-choice">{{ review_form.rating }}</div><div class="mt-3">{{ review_form.comment }}</div><button class="btn btn-flipkart-blue mt-3" type="submit">{% if existing_review %}Save changes{% else %}Submit review{% endif %}</button>{% if existing_review %}<button class="btn btn-link text-danger mt-3" type="submit" formaction="{% url 'review_delete' existing_review.pk %}" formmethod="post">Delete review</button>{% endif %}</form></div>
+        {% elif request.user.is_authenticated %}
+            <p class="review-eligibility">Only customers who purchased this product can leave a verified review.</p>
+        {% else %}
+            <p class="review-eligibility"><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Sign in</a> after purchase to leave a verified review.</p>
+        {% endif %}
+        <div class="review-list">
+            {% for review in reviews %}
+            <article class="review-card"><div class="review-card-head"><div><strong>{{ review.user.get_full_name|default:review.user.username }}</strong>{% if review.verified_purchase %}<span class="verified-badge">&#10003; Verified Purchase</span>{% endif %}<p class="rating-line mb-0">{% for star in '12345' %}{% if forloop.counter <= review.rating %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</p></div><time datetime="{{ review.created_at|date:'c' }}">{{ review.created_at|date:"d M Y" }}</time></div>{% if review.comment %}<p>{{ review.comment|linebreaksbr }}</p>{% endif %}{% if review.user == request.user %}<div class="review-actions"><a href="#reviews">Your review</a><form method="post" action="{% url 'review_delete' review.pk %}">{% csrf_token %}<button type="submit">Delete</button></form></div>{% endif %}</article>
+            {% empty %}<div class="empty-state"><div class="empty-state-icon">&#9734;</div><h4>No reviews yet</h4><p>Be the first verified customer to share an experience.</p></div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if related_products %}<section class="related-section"><div class="section-intro"><div><p class="eyebrow">You may also like</p><h2>Related products</h2></div></div><div class="product-grid">{% for related in related_products %}<article class="product-card"><a href="{% url 'product_detail' related.pk %}" class="product-image-container">{% if related.image %}<img src="{{ related.image.url }}" alt="{{ related.name }}" class="product-image">{% else %}<div class="product-placeholder">B</div>{% endif %}</a><form method="post" action="{% url 'wishlist_toggle' related.pk %}" class="wishlist-heart">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button type="submit" aria-label="Toggle {{ related.name }} wishlist" class="{% if related.id in wishlist_ids %}is-saved{% endif %}">{% if related.id in wishlist_ids %}&#9829;{% else %}&#9825;{% endif %}</button></form><div class="product-card-body"><p class="product-category">{{ related.get_category_display }}</p><h3 class="product-title"><a href="{% url 'product_detail' related.pk %}">{{ related.name }}</a></h3><p class="rating-line">&#9733; {{ related.average_rating|floatformat:1 }} <span>({{ related.total_reviews }})</span></p><div class="product-bottom"><span class="product-price">&#8377;{{ related.price }}</span><button type="button" class="add-to-cart icon-add" {% if not related.is_in_stock %}disabled{% endif %} data-product-id="{{ related.id }}" data-product-name="{{ related.name }}" data-product-price="{{ related.price }}" data-product-stock="{{ related.stock_quantity }}" data-product-image="{% if related.image %}{{ related.image.url }}{% endif %}"><span>+</span></button></div></div></article>{% endfor %}</div></section>{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).on("click", ".product-thumbnail", function () { const thumbnail = $(this); $("#main-product-image").attr("src", thumbnail.data("image")); $(".product-thumbnail").removeClass("active"); thumbnail.addClass("active"); });
+    $(document).on("click", ".add-to-cart", function () { const button = $(this); if (button.is(":disabled")) return; const added = cart.add({product_id: parseInt(button.data("product-id")), name: button.data("product-name"), price: button.data("product-price"), stock_quantity: parseInt(button.data("product-stock")), image: button.data("product-image")}); if (added) { button.html("Added to bag <span aria-hidden='true'>✓</span>"); setTimeout(() => button.html("Add to bag <span aria-hidden='true'>→</span>"), 1200); } });
+    $(document).on("click", ".buy-now", function () { const button = $(this); if (cart.add({product_id: parseInt(button.data("product-id")), name: button.data("product-name"), price: button.data("product-price"), stock_quantity: parseInt(button.data("product-stock")), image: button.data("product-image")})) window.location.href = "{% url 'cart' %}"; });
+</script>
+{% endblock %}

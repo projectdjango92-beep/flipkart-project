@@ -1,0 +1,10 @@
+# Python 3.12.3
+Django==6.1.1
+django-crispy-forms==2.7
+crispy-bootstrap5==2026.9
+django-import-export==4.4.1
+openpyxl==3.1.5
+pillow==12.3.0
+python-dotenv==1.2.4
+
+

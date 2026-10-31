@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Notifications | Bharat Mart{% endblock %}
+{% block content %}
+<div class="main-container notifications-page">
+    <div class="section-heading"><div><span class="section-label">Your updates</span><h2>Notifications</h2></div>{% if notifications %}<form method="post" action="{% url 'notifications_mark_all_read' %}">{% csrf_token %}<button class="btn btn-outline-secondary btn-sm" type="submit">Mark all as read</button></form>{% endif %}</div>
+    <div class="data-card notification-list">
+        {% for notification in notifications %}<form method="post" action="{% url 'notification_read' notification.pk %}" class="notification-row {% if not notification.is_read %}is-unread{% endif %}">{% csrf_token %}<button type="submit"><span><strong>{{ notification.title }}</strong><small>{{ notification.message }}</small></span><time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:"d M Y, h:i A" }}</time></button></form>{% empty %}<div class="empty-state"><div class="empty-state-icon">&#128276;</div><h4>No notifications yet</h4><p>Order and wishlist updates will appear here.</p></div>{% endfor %}
+    </div>
+</div>
+{% endblock %}

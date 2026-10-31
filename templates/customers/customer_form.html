@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm border-0 form-card">
+    <div class="card-body p-4">
+        <h3 class="mb-4">
+            {% if customer %}
+                Edit Customer
+            {% else %}
+                Add Customer
+            {% endif %}
+        </h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">
+                    Username
+                </label>
+                <input type="text"
+                       name="username"
+                       class="form-control"
+                       value="{{ customer.user.username|default:'' }}"
+                       required>
+            </div>
+            {% if not customer %}
+            <div class="mb-3">
+                <label class="form-label">
+                    Password
+                </label>
+                <input type="password"
+                       name="password"
+                       class="form-control"
+                       required>
+            </div>
+            {% endif %}
+            <div class="mb-3">
+                <label class="form-label">
+                    Phone
+                </label>
+                <input type="text"
+                       name="phone"
+                       class="form-control"
+                       value="{{ customer.phone|default:'' }}"
+                       required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">
+                    Address
+                </label>
+                <textarea name="address"
+                          class="form-control"
+                          rows="3"
+                          required>{{ customer.address|default:'' }}</textarea>
+            </div>
+            <button class="btn btn-danger">
+                Save Customer
+            </button>
+            <a href="{% url 'customer_list' %}"
+               class="btn btn-secondary">
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

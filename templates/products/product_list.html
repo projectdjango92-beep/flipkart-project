@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}
+Products
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+<div class="d-flex justify-content-between align-items-center m-4">
+    <div>
+        <h2 class="page-title">
+             Products
+        </h2>
+        <p class="text-muted">
+            Browse available Products
+        </p>
+    </div>
+    <a href="{% url 'product_create' %}"
+       class="btn btn-flipkart">
+        <i class="bi bi-plus-circle"></i>
+        Add Product
+    </a>
+</div>
+
+
+ <div class="row g-4">
+
+        {% for product in products|slice:":4" %}
+
+        <div class="col-12 col-sm-6 col-lg-3">
+
+            <div class="product-card">
+
+                <div class="product-image-container">
+
+                    {% if product.image %}
+
+                        <img
+                            src="{{ product.image.url }}"
+                            alt="{{ product.name }}"
+                            class="product-image"
+                        >
+
+                    {% else %}
+
+                        <div class="product-placeholder">
+                            📦
+                        </div>
+
+                    {% endif %}
+
+
+                    <span class="deal-badge">
+                        Deal
+                    </span>
+
+                </div>
+
+
+                <div class="product-card-body">
+
+                    <h5 class="product-title">
+                        {{ product.name }}
+                    </h5>
+
+                    <p class="product-description">
+                        {{ product.description|truncatechars:70 }}
+                    </p>
+
+
+                    <div class="product-price">
+
+                        ₹{{ product.price }}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% empty %}
+
+            <div class="col-12">
+
+                <div class="empty-state">
+
+                    <div>
+                        📦
+                    </div>
+
+                    <h4>
+                        No products available
+                    </h4>
+
+                    <p>
+                        Products will appear here once they are added.
+                    </p>
+
+                </div>
+
+            </div>
+        {% endfor %}
+
+    </div>
+
+
+
+
+</div>
+
+</div>
+{% endblock %}

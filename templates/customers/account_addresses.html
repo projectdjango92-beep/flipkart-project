@@ -1,0 +1,11 @@
+{% extends "customers/account_base.html" %}
+{% block title %}My Addresses | Bharat Mart{% endblock %}
+{% block account_content %}
+<section class="data-card p-4">
+  <h2>My Addresses</h2>
+  {% for address in addresses %}
+    <div class="border-bottom py-3"><strong>{{ address.full_name }}{% if address.is_default %} · Default{% endif %}</strong><br>{{ address.house }}, {{ address.street }}, {{ address.city }}, {{ address.state }} — {{ address.pin_code }}{% if address.landmark %}<br><small>{{ address.landmark }}</small>{% endif %}<form class="d-inline" method="post" action="{% url 'address_delete' address.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'account_addresses' %}"><button class="btn btn-link text-danger p-0">Delete</button></form></div>
+  {% empty %}<p>No saved addresses.</p>{% endfor %}
+  <form class="mt-4" method="post" action="{% url 'address_add' %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'account_addresses' %}"><h3 class="h5">Add an address</h3><div class="row g-2"><div class="col-md-6"><input class="form-control" name="full_name" placeholder="Full name" required></div><div class="col-md-6"><input class="form-control" name="mobile" placeholder="Mobile" required></div><div class="col-12"><input class="form-control" name="house" placeholder="House / building" required></div><div class="col-12"><input class="form-control" name="street" placeholder="Street / area" required></div><div class="col-md-4"><input class="form-control" name="city" placeholder="City" required></div><div class="col-md-4"><input class="form-control" name="state" placeholder="State" required></div><div class="col-md-4"><input class="form-control" name="pin_code" placeholder="PIN code" required></div><div class="col-12"><input class="form-control" name="landmark" placeholder="Landmark"></div></div><label class="mt-2"><input type="checkbox" name="is_default"> Set as default</label><br><button class="btn btn-flipkart-blue mt-2">Add address</button></form>
+</section>
+{% endblock %}

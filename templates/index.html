@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Bharat Mart | Everyday, better chosen{% endblock %}
+
+{% block content %}
+<div class="main-container home-page">
+    <section class="hero-banner">
+        <div class="hero-copy"><p class="eyebrow">The Bharat edit</p><h1>Everyday things,<br><i>beautifully found.</i></h1><p class="hero-summary">A handpicked collection for your home, your wardrobe and the life in between.</p><a href="#products" class="btn hero-button">Explore the collection <span aria-hidden="true">&#8594;</span></a></div>
+        <div class="hero-art" aria-hidden="true"><div class="hero-sun"></div><div class="hero-orb hero-orb-one"></div><div class="hero-orb hero-orb-two"></div><div class="hero-card hero-card-one"><span>NEW</span><strong>Good<br>things</strong></div><div class="hero-card hero-card-two"><span>INDIA</span><strong>Made for<br>every day</strong></div><div class="hero-curve"></div></div>
+        <div class="hero-footnote"><span>01</span> Curated for the everyday</div>
+    </section>
+
+    <section class="trust-strip" aria-label="Store benefits"><div><span class="trust-icon">&#10022;</span><span><strong>Curated choices</strong><small>Useful, beautiful essentials</small></span></div><div><span class="trust-icon">&#8594;</span><span><strong>Easy delivery</strong><small>Across India, right to you</small></span></div><div><span class="trust-icon">&#10003;</span><span><strong>Shop with ease</strong><small>Secure checkout, simple returns</small></span></div></section>
+
+    <section class="category-showcase" id="offers">
+        <div class="section-intro"><div><p class="eyebrow">Shop by mood</p><h2>A little something<br>for every corner.</h2></div><a href="#products" class="text-link">See everything <span>&#8594;</span></a></div>
+        <div class="category-grid"><a href="?category=Electronics#products" class="category-card category-tech"><span class="category-number">01</span><span class="category-icon">&#9670;</span><h3>Electronics</h3><p>Smart additions</p></a><a href="?category=Mobiles#products" class="category-card category-mobile"><span class="category-number">02</span><span class="category-icon">&#9783;</span><h3>Mobiles</h3><p>Always connected</p></a><a href="?category=Fashion#products" class="category-card category-fashion"><span class="category-number">03</span><span class="category-icon">&#10047;</span><h3>Fashion</h3><p>Wear it your way</p></a><a href="?category=Home#products" class="category-card category-home"><span class="category-number">04</span><span class="category-icon">&#9681;</span><h3>Home</h3><p>Live beautifully</p></a></div>
+    </section>
+
+    {% if featured_products and not q and not selected_category and not selected_brand and not availability %}
+    <section class="featured-section">
+        <div class="section-intro"><div><p class="eyebrow">Picked this week</p><h2>Small delights,<br>big energy.</h2></div><a href="#products" class="text-link">Browse all products <span>&#8594;</span></a></div>
+        <div class="featured-grid">
+            {% for product in featured_products %}
+            <article class="product-card feature-card">
+                <a href="{% url 'product_detail' product.pk %}" class="product-image-container">{% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">{% else %}<div class="product-placeholder">B</div>{% endif %}</a><form method="post" action="{% url 'wishlist_toggle' product.pk %}" class="wishlist-heart">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button type="submit" aria-label="Toggle {{ product.name }} wishlist" class="{% if product.id in wishlist_ids %}is-saved{% endif %}">{% if product.id in wishlist_ids %}&#9829;{% else %}&#9825;{% endif %}</button></form>
+                <div class="product-card-body"><p class="product-category">{{ product.get_category_display }}</p><h3 class="product-title"><a href="{% url 'product_detail' product.pk %}">{{ product.name }}</a></h3><p class="rating-line">&#9733; {{ product.average_rating|floatformat:1 }} <span>({{ product.total_reviews }})</span></p><div class="product-bottom"><span class="product-price">&#8377;{{ product.price }}</span><button type="button" class="add-to-cart icon-add" aria-label="Add {{ product.name }} to bag" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-stock="{{ product.stock_quantity }}" data-product-image="{% if product.image %}{{ product.image.url }}{% endif %}"><span>+</span></button></div></div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% for section in category_sections %}
+    <section class="featured-section category-product-section" id="category-{{ section.code|slugify }}">
+        <div class="section-intro"><div><p class="eyebrow">{{ section.label }}</p><h2>{{ section.label }} picks</h2></div><a href="?category={{ section.code }}#products" class="text-link">View all <span>&#8594;</span></a></div>
+        <div class="featured-grid">{% for product in section.products %}<article class="product-card feature-card"><a href="{% url 'product_detail' product.pk %}" class="product-image-container">{% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">{% else %}<div class="product-placeholder">B</div>{% endif %}</a><div class="product-card-body"><p class="product-category">{{ product.get_category_display }}</p><h3 class="product-title"><a href="{% url 'product_detail' product.pk %}">{{ product.name }}</a></h3><p class="rating-line">&#9733; {{ product.average_rating|floatformat:1 }} <span>({{ product.total_reviews }})</span></p><div class="product-bottom"><span class="product-price">&#8377;{{ product.price }}</span><a class="btn btn-sm btn-flipkart-blue" href="{% url 'product_detail' product.pk %}">View</a></div></div></article>{% endfor %}</div>
+    </section>
+    {% endfor %}
+
+    <section class="catalogue-section" id="products">
+        <div class="catalogue-heading"><p class="eyebrow">The collection</p>{% if q %}<h2>Results for &ldquo;{{ q }}&rdquo;</h2>{% else %}<h2>Find your next favourite.</h2>{% endif %}<p>{{ product_count }} product{{ product_count|pluralize }} found. Filter, sort, and make it yours.</p></div>
+        <div class="catalogue-layout">
+            <aside class="filter-panel" aria-label="Product filters">
+                <div class="filter-heading"><h3>Filter &amp; sort</h3><a href="{% url 'index' %}#products">Clear filters</a></div>
+                <form method="get" action="{% url 'index' %}">
+                    {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+                    <label for="filter-category">Category</label><select id="filter-category" name="category"><option value="">All categories</option>{% for code, label in categories %}<option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+                    <label for="filter-brand">Brand</label><select id="filter-brand" name="brand"><option value="">All brands</option>{% for brand in brands %}<option value="{{ brand }}" {% if selected_brand == brand %}selected{% endif %}>{{ brand }}</option>{% endfor %}</select>
+                    <div class="filter-price"><div><label for="filter-min-price">Min price</label><input id="filter-min-price" type="number" name="min_price" min="0" step="0.01" value="{{ min_price }}"></div><div><label for="filter-max-price">Max price</label><input id="filter-max-price" type="number" name="max_price" min="0" step="0.01" value="{{ max_price }}"></div></div>
+                    <label for="filter-rating">Rating</label><select id="filter-rating" name="rating"><option value="">Any rating</option>{% for number in '12345' %}<option value="{{ number }}" {% if min_rating == number %}selected{% endif %}>{{ number }} stars &amp; up</option>{% endfor %}</select>
+                    <label for="filter-availability">Availability</label><select id="filter-availability" name="availability"><option value="">All items</option><option value="in_stock" {% if availability == 'in_stock' %}selected{% endif %}>In stock</option><option value="out_of_stock" {% if availability == 'out_of_stock' %}selected{% endif %}>Out of stock</option></select>
+                    <label for="filter-sort">Sort by</label><select id="filter-sort" name="sort"><option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Relevance</option><option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option><option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option><option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option><option value="rating" {% if sort == 'rating' %}selected{% endif %}>Highest Rated</option></select>
+                    <button type="submit" class="btn btn-flipkart-blue w-100">Apply filters</button>
+                </form>
+            </aside>
+            <div class="catalogue-results">
+                {% for error in filter_errors %}<div class="alert alert-warning">{{ error }}</div>{% endfor %}
+                <div class="product-grid">
+                    {% for product in products %}
+                    <article class="product-card">
+                        <div class="product-image-container">
+                            <a href="{% url 'product_detail' product.pk %}">{% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">{% else %}<div class="product-placeholder">B</div>{% endif %}</a>
+                            <form method="post" action="{% url 'wishlist_toggle' product.pk %}" class="wishlist-heart">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button type="submit" aria-label="Toggle {{ product.name }} wishlist" class="{% if product.id in wishlist_ids %}is-saved{% endif %}">{% if product.id in wishlist_ids %}&#9829;{% else %}&#9825;{% endif %}</button></form>
+                        </div>
+                        <div class="product-card-body"><p class="product-category">{{ product.get_category_display }}{% if product.brand %} · {{ product.brand }}{% endif %}</p><h3 class="product-title"><a href="{% url 'product_detail' product.pk %}">{{ product.name }}</a></h3>{% if product.description %}<p class="product-description">{{ product.description|truncatechars:62 }}</p>{% endif %}<p class="rating-line">&#9733; {{ product.average_rating|floatformat:1 }} <span>({{ product.total_reviews }})</span></p><p class="stock-line {% if not product.is_in_stock %}out-of-stock{% elif product.is_low_stock %}low-stock{% endif %}">{{ product.availability_label }}</p><div class="product-bottom"><span class="product-price">&#8377;{{ product.price }}</span><button type="button" class="add-to-cart icon-add" {% if not product.is_in_stock %}disabled{% endif %} aria-label="Add {{ product.name }} to bag" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-stock="{{ product.stock_quantity }}" data-product-image="{% if product.image %}{{ product.image.url }}{% endif %}"><span>{% if product.is_in_stock %}+{% else %}×{% endif %}</span></button></div></div>
+                    </article>
+                    {% empty %}
+                    <div class="empty-state"><div class="empty-state-icon">&#10022;</div><h4>No products found</h4><p>Try clearing a filter or using a different search.</p><a href="{% url 'index' %}#products" class="btn btn-flipkart-blue mt-3">Clear filters</a></div>
+                    {% endfor %}
+                </div>
+                {% if page_obj.paginator.num_pages > 1 %}<nav class="catalogue-pagination" aria-label="Product pages">{% if page_obj.has_previous %}<a href="?{{ filter_query }}{% if filter_query %}&amp;{% endif %}page={{ page_obj.previous_page_number }}#products">&larr; Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?{{ filter_query }}{% if filter_query %}&amp;{% endif %}page={{ page_obj.next_page_number }}#products">Next &rarr;</a>{% endif %}</nav>{% endif %}
+            </div>
+        </div>
+    </section>
+    <section class="closing-banner"><div><p class="eyebrow">Keep exploring</p><h2>Good things are<br>closer than you think.</h2></div><a href="#products" class="btn outline-light-button">Shop the collection <span>&#8594;</span></a></section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).on("click", ".add-to-cart", function () {
+        const button = $(this);
+        if (button.is(":disabled")) return;
+        const added = cart.add({product_id: parseInt(button.data("product-id")), name: button.data("product-name"), price: button.data("product-price"), stock_quantity: parseInt(button.data("product-stock")), image: button.data("product-image")});
+        if (added) { button.addClass("is-added").find("span").text("✓"); setTimeout(() => button.removeClass("is-added").find("span").text("+"), 1100); }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Your wishlist | Bharat Mart{% endblock %}
+{% block content %}
+<div class="main-container wishlist-page">
+    <div class="section-heading"><div><span class="section-label">Saved for later</span><h2>Your wishlist</h2><p class="text-muted mb-0">Keep an eye on the things you love.</p></div><a href="{% url 'index' %}#products" class="text-link">Continue shopping <span>&#8594;</span></a></div>
+    <div class="wishlist-list">
+        {% for item in wishlist_items %}
+        <article class="data-card wishlist-item"><div class="p-3 p-md-4 row align-items-center g-3"><div class="col-4 col-md-2">{% if item.product.image %}<img class="wishlist-image" src="{{ item.product.image.url }}" alt="{{ item.product.name }}">{% else %}<div class="product-image-placeholder wishlist-image">B</div>{% endif %}</div><div class="col-8 col-md-5"><p class="product-category">{{ item.product.get_category_display }}{% if item.product.brand %} · {{ item.product.brand }}{% endif %}</p><h3 class="h5"><a href="{% url 'product_detail' item.product.pk %}">{{ item.product.name }}</a></h3><p class="rating-line">&#9733; {{ item.rating_average|floatformat:1 }} <span>({{ item.review_count }})</span></p><p class="stock-line {% if not item.product.is_in_stock %}out-of-stock{% elif item.product.is_low_stock %}low-stock{% endif %}">{{ item.product.availability_label }}</p></div><div class="col-6 col-md-2"><strong class="product-price">&#8377;{{ item.product.price }}</strong></div><div class="col-6 col-md-3 text-md-end"><form method="post" action="{% url 'wishlist_move_to_cart' item.pk %}" class="move-wishlist-item d-inline">{% csrf_token %}<button type="submit" class="btn btn-flipkart-blue btn-sm" {% if not item.product.is_in_stock %}disabled{% endif %}>Move to bag</button></form><form method="post" action="{% url 'wishlist_remove' item.pk %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-link text-danger btn-sm">Remove</button></form></div></div></article>
+        {% empty %}
+        <div class="empty-state"><div class="empty-state-icon">&#9825;</div><h4>Your wishlist is waiting.</h4><p>Tap the heart on any product to save it for later.</p><a href="{% url 'index' %}#products" class="btn btn-flipkart-blue mt-3">Explore products</a></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    $(document).on("submit", ".move-wishlist-item", function (event) { event.preventDefault(); const form = $(this); const button = form.find("button"); if (button.is(":disabled")) return; $.ajax({url: form.attr("action"), type: "POST", headers: {"X-CSRFToken": getCookie("csrftoken"), "X-Requested-With": "XMLHttpRequest"}, success: function (response) { cart.add(response.product); form.closest(".wishlist-item").fadeOut(200, function () { $(this).remove(); }); }, error: function (response) { alert(response.responseJSON?.message || "Unable to move this item to your bag."); }}); });
+</script>
+{% endblock %}

@@ -1,0 +1,1 @@
+{% extends "customers/account_base.html" %}{% block title %}My Profile | Bharat Mart{% endblock %}{% block account_content %}<section class="data-card p-4"><h2>My Profile</h2><form method="post" action="{% url 'profile_update' %}">{% csrf_token %}{{ profile_form.as_p }}<button class="btn btn-flipkart-blue">Save changes</button></form></section>{% endblock %}

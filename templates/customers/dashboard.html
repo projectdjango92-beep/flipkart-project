@@ -1,0 +1,8 @@
+{% extends "customers/account_base.html" %}
+{% block title %}My Account | Bharat Mart{% endblock %}
+{% block account_content %}
+<section class="data-card p-4">
+  <h2>My Account</h2>
+  <p><a href="{% url 'account_profile' %}">Open your profile</a></p>
+</section>
+{% endblock %}

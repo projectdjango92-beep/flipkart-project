@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#102b46">
+    <title>{% block title %}Bharat Mart{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="announcement-bar">
+        <div class="site-width announcement-content">
+            <span>Thoughtfully chosen. Delivered across India.</span>
+            <span class="announcement-note">Free delivery on orders over &#8377;499</span>
+        </div>
+    </div>
+
+    <header class="site-header">
+        <div class="site-width nav-row">
+            <a class="brand" href="{% url 'index' %}" aria-label="Bharat Mart home">
+                <span class="brand-mark" aria-hidden="true">B</span>
+                <span class="brand-name">Bharat <em>Mart</em></span>
+            </a>
+
+            <form class="site-search" method="get" action="{% url 'index' %}" role="search">
+                <label class="visually-hidden" for="site-search-input">Search the catalogue</label>
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
+                <input id="site-search-input" type="search" name="q" value="{{ q|default:'' }}" placeholder="Search products, brands &amp; more">
+                <button type="submit">Search</button>
+            </form>
+
+            <div class="nav-actions">
+                {% if request.user.is_authenticated %}
+                    <details class="notification-menu"><summary class="account-link"><span class="account-dot"></span><span>Hi, {{ request.user.first_name|default:request.user.username }}</span></summary><div class="notification-dropdown"><div class="notification-dropdown-head"><strong>My account</strong></div><a class="notification-menu-item d-block" href="{% url 'account_profile' %}">My account</a><a class="notification-menu-item d-block" href="{% url 'account_orders' %}">My orders</a><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Log out</button></form></div></details>
+                    <a href="{% url 'wishlist' %}" class="nav-icon-link" aria-label="View wishlist">&#9825;<span class="visually-hidden">Wishlist</span></a>
+                    <details class="notification-menu">
+                        <summary class="nav-icon-link" aria-label="Notifications">&#128276;{% if unread_notification_count %}<span class="notification-count">{{ unread_notification_count }}</span>{% endif %}</summary>
+                        <div class="notification-dropdown">
+                            <div class="notification-dropdown-head"><strong>Notifications</strong><a href="{% url 'notifications' %}">View all</a></div>
+                            {% for notification in recent_notifications %}
+                                <form method="post" action="{% url 'notification_read' notification.pk %}" class="notification-menu-item {% if not notification.is_read %}is-unread{% endif %}">
+                                    {% csrf_token %}<button type="submit"><strong>{{ notification.title }}</strong><span>{{ notification.message }}</span></button>
+                                </form>
+                            {% empty %}
+                                <p class="notification-empty">You are all caught up.</p>
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% else %}
+                    <a href="{% url 'login' %}" class="account-link">Sign in</a>
+                {% endif %}
+                <a href="{% url 'cart' %}" class="cart-link" aria-label="View shopping bag">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5.5 8.5h13l-1 11h-11l-1-11Zm3-1V6a3.5 3.5 0 0 1 7 0v1.5"/></svg>
+                    <span>Bag</span><span id="cart-count" class="cart-count">0</span>
+                </a>
+            </div>
+        </div>
+
+        <nav class="category-navbar" aria-label="Product categories">
+            <div class="site-width category-links">
+                <a href="{% url 'index' %}#products">All products</a>
+                <a href="{% url 'index' %}?category=Electronics#products">Electronics</a>
+                <a href="{% url 'index' %}?category=Mobiles#products">Mobiles</a>
+                <a href="{% url 'index' %}?category=Fashion#products">Fashion</a>
+                <a href="{% url 'index' %}?category=Home#products">Home &amp; living</a>
+                <a href="{% url 'index' %}#offers" class="nav-offer">Seasonal picks</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="site-main">
+        {% if messages %}
+            <div class="site-width flash-messages">
+                {% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-width footer-grid">
+            <div class="footer-brand">
+                <a class="brand brand-footer" href="{% url 'index' %}"><span class="brand-mark" aria-hidden="true">B</span><span class="brand-name">Bharat <em>Mart</em></span></a>
+                <p>A more considered way to find everyday favourites.</p>
+            </div>
+            <div><p class="footer-title">Shop</p><a href="{% url 'index' %}#products">All products</a><a href="{% url 'cart' %}">Your bag</a>{% if request.user.is_authenticated %}<a href="{% url 'wishlist' %}">Wishlist</a><a href="{% url 'order_list' %}">Your orders</a>{% endif %}</div>
+            <div><p class="footer-title">Help</p><a href="#">Delivery &amp; returns</a><a href="#">Payments</a><a href="#">Contact us</a></div>
+            <div><p class="footer-title">A note from us</p><p>Good finds should feel simple. That is the whole idea.</p></div>
+        </div>
+        <div class="site-width footer-bottom"><span>&copy; 2026 Bharat Mart</span><span>Made for everyday discovery</span></div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/cart.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
