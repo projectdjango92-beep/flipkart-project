@@ -168,6 +168,12 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
+    # Defining STORAGES replaces Django's defaults.  Product cards and product
+    # details resolve ImageField.url through this alias, so keep media storage
+    # explicitly configured alongside WhiteNoise's static-file storage.
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },

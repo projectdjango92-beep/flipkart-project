@@ -29,7 +29,13 @@ class ReviewAccessTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="buyer", password="safe-password-123")
         self.customer = Customer.objects.create(user=self.user, mobile="1", street="Road", address="Address", city="Mumbai", postcode="400001", country="India")
-        self.product = Product.objects.create(name="Headphones", category="Electronics", price="999.00", stock_quantity=5)
+        self.product = Product.objects.create(
+            name="Headphones",
+            category="Electronics",
+            price="999.00",
+            image="products/demo_1.webp",
+            stock_quantity=5,
+        )
 
     def test_customer_cannot_review_before_purchase(self):
         self.client.force_login(self.user)
