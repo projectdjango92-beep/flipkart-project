@@ -59,12 +59,12 @@ class OrderAdmin(admin.ModelAdmin):
         if desired_status != previous.status:
             obj.transition_to(desired_status, f"Updated by {request.user.get_username()} in admin")
 
-    @admin.action(description="Retry Excel export for selected orders")
+    @admin.action(description="Mark selected orders for the next Excel download")
     def retry_excel_export(self, request, queryset):
         from .services import export_order_after_commit
         for order in queryset:
             export_order_after_commit(order.pk)
-        self.message_user(request, "Excel export retry requested. Check server logs if the supplied workbook is missing or invalid.")
+        self.message_user(request, "The Excel report is generated from the database when an authorized staff member downloads it.")
 
 
 @admin.register(OrderItem)

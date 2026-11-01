@@ -41,7 +41,11 @@ ENV/
 db.sqlite3
 staticfiles/
 order_export.log
-order_reports/
+# Keep the supplied report template in source control. Generated workbook
+# copies remain ignored because Neon is the report source of truth.
+!order_reports/
+order_reports/*
+!order_reports/Bharat_Mart_Orders_Template.xlsx
 private-backups/
 *.json.backup
 

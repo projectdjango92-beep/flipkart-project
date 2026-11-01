@@ -26,15 +26,17 @@ from .models import Coupon, CouponRedemption, EMIPlan, Order, OrderItem
 
 @staff_member_required
 def download_order_export(request):
-    """Download only the supplied order workbook as a real XLSX response."""
-    from .services import WORKBOOK_PATH
+    """Download a fresh, staff-only XLSX report from the current database."""
+    from .services import generate_order_report
 
-    if not WORKBOOK_PATH.is_file():
-        raise Http404(f"Order workbook is unavailable: {WORKBOOK_PATH}")
+    try:
+        workbook = generate_order_report()
+    except FileNotFoundError:
+        raise Http404("Order report template is unavailable.")
     return FileResponse(
-        WORKBOOK_PATH.open("rb"),
+        workbook,
         as_attachment=True,
-        filename=WORKBOOK_PATH.name,
+        filename="Bharat_Mart_Orders_Report.xlsx",
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 

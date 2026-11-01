@@ -1,5 +1,8 @@
 import json
 from datetime import timedelta
+from io import BytesIO
+
+from openpyxl import load_workbook
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -9,7 +12,8 @@ from django.utils import timezone
 from customers.models import Address, Customer
 from products.models import Product
 
-from .models import Coupon, CouponRedemption, Order
+from .models import Coupon, CouponRedemption, Order, OrderItem
+from .services import WORKBOOK_PATH, generate_order_report
 
 
 class CheckoutAndOrderSecurityTests(TestCase):
@@ -60,3 +64,52 @@ class CheckoutAndOrderSecurityTests(TestCase):
         self.assertEqual(str(order.coupon_discount), "100.00")
         self.assertEqual(order.coupon, coupon)
         self.assertTrue(CouponRedemption.objects.filter(order=order, coupon=coupon).exists())
+
+
+class OrderReportTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username="staff", password="safe-password-123", is_staff=True)
+        user = User.objects.create_user(username="report-buyer", email="buyer@example.test")
+        self.customer = Customer.objects.create(user=user, mobile="1", street="Road", address="Address", city="Mumbai", postcode="400001", country="India")
+        self.product = Product.objects.create(name="Phone", category="Mobiles", price="1000.00", stock_quantity=5)
+        self.order = Order.objects.create(customer=self.customer, subtotal_amount="1000.00", delivery_city="Mumbai", delivery_state="Maharashtra", delivery_pin_code="400001")
+        OrderItem.objects.create(order=self.order, product=self.product, quantity=1, price="1000.00")
+
+    def _workbook_from_response(self, response):
+        return load_workbook(BytesIO(b"".join(response.streaming_content)))
+
+    def test_download_is_staff_only(self):
+        self.assertEqual(self.client.get(reverse("download_order_export")).status_code, 302)
+        user = User.objects.create_user(username="not-staff", password="safe-password-123")
+        self.client.force_login(user)
+        self.assertEqual(self.client.get(reverse("download_order_export")).status_code, 302)
+
+    def test_report_is_fresh_and_preserves_template_layout(self):
+        self.client.force_login(self.staff)
+        template = load_workbook(WORKBOOK_PATH)
+        response = self.client.get(reverse("download_order_export"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        workbook = self._workbook_from_response(response)
+        orders_sheet, items_sheet = workbook["Orders"], workbook["Order Items"]
+        self.assertEqual(orders_sheet.auto_filter.ref, "A1:P2")
+        self.assertEqual(items_sheet.auto_filter.ref, "A1:G2")
+        self.assertEqual(orders_sheet.freeze_panes, "A2")
+        self.assertEqual(items_sheet.freeze_panes, "A2")
+        self.assertEqual(orders_sheet.column_dimensions["A"].width, template["Orders"].column_dimensions["A"].width)
+        self.assertEqual(orders_sheet.cell(2, 2).number_format, template["Orders"].cell(2, 2).number_format)
+        self.assertEqual(orders_sheet.cell(2, 3).number_format, template["Orders"].cell(2, 3).number_format)
+        self.assertEqual(orders_sheet.cell(2, 1).value, self.order.pk)
+        self.assertEqual(items_sheet.cell(2, 1).value, self.order.pk)
+        self.assertEqual(sum(row[0].value == self.order.pk for row in orders_sheet.iter_rows(min_row=2)), 1)
+        self.assertEqual(sum(row[0].value == self.order.pk for row in items_sheet.iter_rows(min_row=2)), 1)
+
+        later_order = Order.objects.create(customer=self.customer, subtotal_amount="1000.00")
+        OrderItem.objects.create(order=later_order, product=self.product, quantity=1, price="1000.00")
+        refreshed = load_workbook(generate_order_report())
+        self.assertEqual(refreshed["Orders"].auto_filter.ref, "A1:P3")
+        self.assertEqual(
+            {row[0].value for row in refreshed["Orders"].iter_rows(min_row=2) if row[0].value},
+            {self.order.pk, later_order.pk},
+        )
+        self.assertTrue(WORKBOOK_PATH.is_file())

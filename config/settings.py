@@ -134,10 +134,12 @@ if database_url:
         )
     }
     # Neon requires encrypted connections.  Keep a URL-provided sslmode (for
-    # example verify-full) but make the secure default explicit.
-    DATABASES["default"].setdefault("OPTIONS", {})
-    DATABASES["default"]["OPTIONS"].setdefault("sslmode", "require")
-    DATABASES["default"]["OPTIONS"].setdefault("connect_timeout", 10)
+    # example verify-full) but make the secure default explicit.  Do not pass
+    # PostgreSQL-only options to another backend used by local test runs.
+    if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+        DATABASES["default"].setdefault("OPTIONS", {})
+        DATABASES["default"]["OPTIONS"].setdefault("sslmode", "require")
+        DATABASES["default"]["OPTIONS"].setdefault("connect_timeout", 10)
 else:
     DATABASES = {
         "default": {

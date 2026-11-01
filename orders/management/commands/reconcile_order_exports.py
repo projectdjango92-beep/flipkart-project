@@ -4,10 +4,10 @@ from orders.services import WORKBOOK_PATH, reconcile_workbook
 
 
 class Command(BaseCommand):
-    help = "Retry the idempotent Excel export for all existing orders."
+    help = "Validate that a fresh, database-backed Excel report can be generated."
 
     def handle(self, *args, **options):
         if not WORKBOOK_PATH.exists():
             raise CommandError(f"Required workbook is missing: {WORKBOOK_PATH}")
         reconcile_workbook()
-        self.stdout.write(self.style.SUCCESS(f"Reconciled order exports in {WORKBOOK_PATH}"))
+        self.stdout.write(self.style.SUCCESS("Generated an in-memory order report successfully."))
