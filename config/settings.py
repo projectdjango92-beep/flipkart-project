@@ -11,8 +11,10 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
+import dj_database_url
 from dotenv import load_dotenv
 
 import mimetypes
@@ -53,7 +55,11 @@ CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 # Render terminates TLS at its proxy. These settings keep browser redirects and
 # session/CSRF cookies secure when DEBUG is disabled.
-if not DEBUG:
+# The Django test client makes HTTP requests by default. Keep the production
+# HTTPS policy out of the in-process test runner while retaining it for every
+# deployed command/server process.
+RUNNING_TESTS = "test" in sys.argv
+if not DEBUG and not RUNNING_TESTS:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", True)
     SESSION_COOKIE_SECURE = True
@@ -114,16 +120,30 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        # Leave unset locally. On Render, point this at a persistent disk (for
-        # example /var/data/db.sqlite3) so deployments do not replace SQLite.
-        'NAME': os.getenv('DJANGO_DB_PATH', BASE_DIR / 'db.sqlite3'),
+# DATABASE_URL is supplied by Render for Neon.  Without it, retain the local
+# SQLite database exactly as it is, which keeps local development independent
+# of the hosted database.
+database_url = os.getenv("DATABASE_URL")
+if database_url:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            database_url,
+            conn_max_age=0,
+            conn_health_checks=True,
+        )
     }
-}
+    # Neon requires encrypted connections.  Keep a URL-provided sslmode (for
+    # example verify-full) but make the secure default explicit.
+    DATABASES["default"].setdefault("OPTIONS", {})
+    DATABASES["default"]["OPTIONS"].setdefault("sslmode", "require")
+    DATABASES["default"]["OPTIONS"].setdefault("connect_timeout", 10)
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.getenv("DJANGO_DB_PATH", BASE_DIR / "db.sqlite3"),
+        }
+    }
 
 
 # Password validation

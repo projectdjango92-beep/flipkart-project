@@ -42,6 +42,8 @@ db.sqlite3
 staticfiles/
 order_export.log
 order_reports/
+private-backups/
+*.json.backup
 
 # Local backups (source and media are retained elsewhere in the project)
 code_backup/
