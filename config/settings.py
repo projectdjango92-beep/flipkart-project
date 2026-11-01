@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 import mimetypes
@@ -187,12 +188,37 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Product ImageField values deliberately retain their existing relative names
+# (for example, ``products/demo_1.webp``).  With all three credentials present
+# they resolve through Cloudinary; otherwise local development continues to use
+# the checked-in media directory without requiring any Cloudinary account.
+cloudinary_settings = {
+    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", "").strip(),
+    "API_KEY": os.getenv("CLOUDINARY_API_KEY", "").strip(),
+    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", "").strip(),
+}
+configured_cloudinary_values = [value for value in cloudinary_settings.values() if value]
+if configured_cloudinary_values and len(configured_cloudinary_values) != len(cloudinary_settings):
+    raise ImproperlyConfigured(
+        "Set all of CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and "
+        "CLOUDINARY_API_SECRET, or set none of them."
+    )
+
+CLOUDINARY_ENABLED = len(configured_cloudinary_values) == len(cloudinary_settings)
+if CLOUDINARY_ENABLED:
+    CLOUDINARY_STORAGE = cloudinary_settings
+
 STORAGES = {
     # Defining STORAGES replaces Django's defaults.  Product cards and product
     # details resolve ImageField.url through this alias, so keep media storage
     # explicitly configured alongside WhiteNoise's static-file storage.
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": (
+            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            if CLOUDINARY_ENABLED
+            else "django.core.files.storage.FileSystemStorage"
+        ),
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
