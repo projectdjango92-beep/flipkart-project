@@ -5,6 +5,7 @@ from . import views
 
 urlpatterns = [
     path("export/download/", views.download_order_export, name="download_order_export"),
+    path("payment/upi/<int:pk>/", views.upi_payment, name="upi_payment"),
     path(
         "cart/",
         views.cart,

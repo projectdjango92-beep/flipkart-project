@@ -36,7 +36,7 @@
 
             <div class="nav-actions">
                 {% if request.user.is_authenticated %}
-                    <details class="notification-menu"><summary class="account-link"><span class="account-dot"></span><span>Hi, {{ request.user.first_name|default:request.user.username }}</span></summary><div class="notification-dropdown"><div class="notification-dropdown-head"><strong>My account</strong></div><a class="notification-menu-item d-block" href="{% url 'account_profile' %}">My account</a><a class="notification-menu-item d-block" href="{% url 'account_orders' %}">My orders</a><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Log out</button></form></div></details>
+                    <a href="{% url 'account_profile' %}" class="profile-avatar" aria-label="Open my account">{{ request.user.username|default:"?"|first|upper }}</a>
                     <a href="{% url 'wishlist' %}" class="nav-icon-link" aria-label="View wishlist">&#9825;<span class="visually-hidden">Wishlist</span></a>
                     <details class="notification-menu">
                         <summary class="nav-icon-link" aria-label="Notifications">&#128276;{% if unread_notification_count %}<span class="notification-count">{{ unread_notification_count }}</span>{% endif %}</summary>

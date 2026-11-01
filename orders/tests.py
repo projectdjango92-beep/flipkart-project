@@ -5,14 +5,15 @@ from io import BytesIO
 from openpyxl import load_workbook
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from customers.models import Address, Customer
 from products.models import Product
 
-from .models import Coupon, CouponRedemption, Order, OrderItem
+from .models import Coupon, CouponRedemption, EMIPlan, Order, OrderItem
+from .payments import upi_intent, upi_qr_code
 from .services import WORKBOOK_PATH, generate_order_report
 
 
@@ -35,6 +36,31 @@ class CheckoutAndOrderSecurityTests(TestCase):
         self.assertEqual(str(order.items.get().price), "1000.00")
         self.assertFalse(order.payment_successful)
         self.assertEqual(order.status, Order.Status.PLACED)
+
+    def test_cod_and_eligible_emi_checkouts_remain_available(self):
+        self.client.force_login(self.user)
+        cod_response = self.client.post(reverse("cart"), data=json.dumps({
+            "items": [{"product_id": self.product.pk, "quantity": 1}],
+            "payment_method": "COD", "address_id": self.address.pk,
+        }), content_type="application/json")
+        self.assertEqual(cod_response.status_code, 200)
+        cod_order = Order.objects.get()
+        self.assertEqual(cod_order.payment_method, Order.PaymentMethod.COD)
+        self.assertEqual(cod_order.payment_status, "PENDING")
+
+        emi_plan = EMIPlan.objects.create(
+            name="3-month plan", months=3, annual_interest_rate="12.00",
+            minimum_purchase_amount="500.00",
+        )
+        emi_response = self.client.post(reverse("cart"), data=json.dumps({
+            "items": [{"product_id": self.product.pk, "quantity": 1}],
+            "payment_method": "EMI", "emi_plan_id": emi_plan.pk,
+            "address_id": self.address.pk,
+        }), content_type="application/json")
+        self.assertEqual(emi_response.status_code, 200)
+        emi_order = Order.objects.exclude(pk=cod_order.pk).get()
+        self.assertEqual(emi_order.payment_method, Order.PaymentMethod.EMI)
+        self.assertEqual(emi_order.emi_plan, emi_plan)
 
     def test_cancellation_restores_stock_once_and_orders_are_private(self):
         self.client.force_login(self.user)
@@ -64,6 +90,36 @@ class CheckoutAndOrderSecurityTests(TestCase):
         self.assertEqual(str(order.coupon_discount), "100.00")
         self.assertEqual(order.coupon, coupon)
         self.assertTrue(CouponRedemption.objects.filter(order=order, coupon=coupon).exists())
+
+    def test_profile_avatar_opens_account_profile(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("index"))
+        self.assertContains(response, 'class="profile-avatar"')
+        self.assertContains(response, reverse("account_profile"))
+        self.assertNotContains(response, "Hi, buyer")
+
+    @override_settings(BHARAT_MART_UPI_ID="bharatmart@upi", BHARAT_MART_UPI_NAME="Bharat Mart")
+    def test_online_upi_order_uses_server_total_and_stays_pending(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse("cart"), data=json.dumps({
+            "items": [{"product_id": self.product.pk, "quantity": 1, "price": "1.00"}],
+            "payment_method": "ONLINE", "address_id": self.address.pk,
+        }), content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        order = Order.objects.get()
+        self.assertEqual(order.payment_method, Order.PaymentMethod.ONLINE)
+        self.assertEqual(order.payment_status, "PENDING")
+        self.assertFalse(order.payment_successful)
+        self.assertEqual(str(order.total_amount), "1000.00")
+        self.assertEqual(response.json()["redirect_url"], reverse("upi_payment", args=[order.pk]))
+        payment_page = self.client.get(response.json()["redirect_url"])
+        self.assertContains(payment_page, "Open UPI app")
+        self.assertContains(payment_page, "Payment pending verification")
+        self.assertIn("am=1000.00", upi_intent(order))
+        self.assertIn("tr=BM-", upi_intent(order))
+        self.assertTrue(upi_qr_code(order).startswith("data:image/png;base64,"))
+        self.client.force_login(self.other_user)
+        self.assertEqual(self.client.get(reverse("upi_payment", args=[order.pk])).status_code, 404)
 
 
 class OrderReportTests(TestCase):

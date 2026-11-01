@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}UPI payment | Bharat Mart{% endblock %}
+{% block content %}
+<div class="main-container payment-page">
+  <section class="section-heading"><div><span class="section-label">Secure payment</span><h2>Pay for order #{{ order.pk }}</h2></div></section>
+  <div class="payment-grid">
+    <section class="data-card payment-option-card"><div class="p-4"><p class="cart-summary-title">Option 1</p><h3>Open your UPI app</h3><p>Use Google Pay, PhonePe, Paytm, or another compatible UPI app to pay <strong>&#8377;{{ order.total_amount }}</strong>.</p><a class="btn btn-flipkart-blue w-100" href="{{ upi_intent }}">Open UPI app</a><p class="small text-muted mt-3 mb-0">If no app opens, use the QR code instead. Opening an app does not confirm payment.</p></div></section>
+    <section class="data-card payment-option-card"><div class="p-4 text-center"><p class="cart-summary-title">Option 2</p><h3>Scan to pay</h3><img class="upi-qr" src="{{ upi_qr_code }}" alt="UPI QR code for order {{ order.pk }}"><p class="mt-3 mb-1">Amount: <strong>&#8377;{{ order.total_amount }}</strong></p><p class="small text-muted">Reference: {{ payment_reference }}</p></div></section>
+  </div>
+  <section class="data-card payment-pending-note"><div class="p-4"><h3>Payment pending verification</h3><p>Your order has been created, but it is not marked paid simply by opening an app or scanning this code. We confirm payment only through a verified provider or verified manual process.</p><a href="{% url 'order_detail' order.pk %}" class="text-link">View order status <span>&#8594;</span></a></div></section>
+</div>
+{% endblock %}

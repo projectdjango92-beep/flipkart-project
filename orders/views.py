@@ -22,6 +22,7 @@ from customers.models import Address
 from customers.services import get_or_create_customer
 
 from .models import Coupon, CouponRedemption, EMIPlan, Order, OrderItem
+from .payments import payment_reference, upi_intent, upi_is_configured, upi_qr_code
 
 
 @staff_member_required
@@ -130,8 +131,8 @@ def cart(request):
                     return JsonResponse({"message": "Please select an available EMI plan."}, status=400)
                 if not emi_plan.is_eligible_for(products.values(), subtotal + delivery_charge - coupon_discount):
                     return JsonResponse({"message": "The selected EMI plan is not eligible for this order."}, status=400)
-            if payment_method == Order.PaymentMethod.ONLINE:
-                return JsonResponse({"message": "Online payment is not configured. Set up a verified gateway before enabling this method."}, status=400)
+            if payment_method == Order.PaymentMethod.ONLINE and not upi_is_configured():
+                return JsonResponse({"message": "Online UPI payment is temporarily unavailable."}, status=503)
             address = Address.objects.filter(customer=customer, pk=data.get("address_id")).first()
             if not address:
                 return JsonResponse({"message": "Select a complete saved delivery address before placing your order."}, status=400)
@@ -168,8 +169,28 @@ def cart(request):
     return JsonResponse({
         "success": True,
         "order_id": order.id,
-        "redirect_url": reverse("order_detail", kwargs={"pk": order.id}) + "?placed=1",
+        "redirect_url": (
+            reverse("upi_payment", kwargs={"pk": order.id})
+            if order.payment_method == Order.PaymentMethod.ONLINE
+            else reverse("order_detail", kwargs={"pk": order.id}) + "?placed=1"
+        ),
         "total": str(order.total_amount),
+    })
+
+
+@login_required
+def upi_payment(request, pk):
+    """Show pending-only UPI instructions to the order owner."""
+    order = get_object_or_404(
+        Order.objects.select_related("customer__user"), pk=pk,
+        customer__user=request.user, payment_method=Order.PaymentMethod.ONLINE,
+    )
+    if not upi_is_configured():
+        messages.error(request, "Online UPI payment is temporarily unavailable.")
+        return redirect("order_detail", pk=order.pk)
+    return render(request, "orders/upi_payment.html", {
+        "order": order, "upi_intent": upi_intent(order),
+        "upi_qr_code": upi_qr_code(order), "payment_reference": payment_reference(order),
     })
 
 

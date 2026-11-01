@@ -54,6 +54,11 @@ DEBUG = env_bool("DJANGO_DEBUG")
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
+# This is a public payee address, never a gateway secret. An empty value keeps
+# online UPI checkout safely unavailable until a merchant configures it.
+BHARAT_MART_UPI_ID = os.getenv("BHARAT_MART_UPI_ID", "").strip()
+BHARAT_MART_UPI_NAME = os.getenv("BHARAT_MART_UPI_NAME", "Bharat Mart").strip()
+
 # Render terminates TLS at its proxy. These settings keep browser redirects and
 # session/CSRF cookies secure when DEBUG is disabled.
 # The Django test client makes HTTP requests by default. Keep the production
