@@ -193,19 +193,25 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # (for example, ``products/demo_1.webp``).  With all three credentials present
 # they resolve through Cloudinary; otherwise local development continues to use
 # the checked-in media directory without requiring any Cloudinary account.
-cloudinary_settings = {
+cloudinary_credentials = {
     "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", "").strip(),
     "API_KEY": os.getenv("CLOUDINARY_API_KEY", "").strip(),
     "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", "").strip(),
 }
-configured_cloudinary_values = [value for value in cloudinary_settings.values() if value]
-if configured_cloudinary_values and len(configured_cloudinary_values) != len(cloudinary_settings):
+cloudinary_settings = {
+    **cloudinary_credentials,
+    # Existing database names already begin with ``products/``. Do not prepend
+    # Django's MEDIA_URL (the storage package otherwise defaults to ``media/``).
+    "PREFIX": "",
+}
+configured_cloudinary_values = [value for value in cloudinary_credentials.values() if value]
+if configured_cloudinary_values and len(configured_cloudinary_values) != len(cloudinary_credentials):
     raise ImproperlyConfigured(
         "Set all of CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and "
         "CLOUDINARY_API_SECRET, or set none of them."
     )
 
-CLOUDINARY_ENABLED = len(configured_cloudinary_values) == len(cloudinary_settings)
+CLOUDINARY_ENABLED = len(configured_cloudinary_values) == len(cloudinary_credentials)
 if CLOUDINARY_ENABLED:
     CLOUDINARY_STORAGE = cloudinary_settings
 
@@ -215,7 +221,7 @@ STORAGES = {
     # explicitly configured alongside WhiteNoise's static-file storage.
     "default": {
         "BACKEND": (
-            "cloudinary_storage.storage.MediaCloudinaryStorage"
+            "products.storage.ExistingFilenameCloudinaryStorage"
             if CLOUDINARY_ENABLED
             else "django.core.files.storage.FileSystemStorage"
         ),
