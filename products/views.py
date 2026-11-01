@@ -132,6 +132,7 @@ def index(request):
         "categories": Product.CATEGORY_CHOICES,
         "brands": brands,
         "q": q,
+        "is_search_results": bool(q),
         "selected_category": selected_category,
         "selected_brand": selected_brand,
         "availability": availability,

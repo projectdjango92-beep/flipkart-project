@@ -3,6 +3,7 @@
 
 {% block content %}
 <div class="main-container home-page">
+    {% if not is_search_results %}
     <section class="hero-banner">
         <div class="hero-copy"><p class="eyebrow">The Bharat edit</p><h1>Everyday things,<br><i>beautifully found.</i></h1><p class="hero-summary">A handpicked collection for your home, your wardrobe and the life in between.</p><a href="#products" class="btn hero-button">Explore the collection <span aria-hidden="true">&#8594;</span></a></div>
         <div class="hero-art" aria-hidden="true"><div class="hero-sun"></div><div class="hero-orb hero-orb-one"></div><div class="hero-orb hero-orb-two"></div><div class="hero-card hero-card-one"><span>NEW</span><strong>Good<br>things</strong></div><div class="hero-card hero-card-two"><span>INDIA</span><strong>Made for<br>every day</strong></div><div class="hero-curve"></div></div>
@@ -36,6 +37,7 @@
         <div class="featured-grid">{% for product in section.products %}<article class="product-card feature-card"><a href="{% url 'product_detail' product.pk %}" class="product-image-container">{% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">{% else %}<div class="product-placeholder">B</div>{% endif %}</a><div class="product-card-body"><p class="product-category">{{ product.get_category_display }}</p><h3 class="product-title"><a href="{% url 'product_detail' product.pk %}">{{ product.name }}</a></h3><p class="rating-line">&#9733; {{ product.average_rating|floatformat:1 }} <span>({{ product.total_reviews }})</span></p><div class="product-bottom"><span class="product-price">&#8377;{{ product.price }}</span><a class="btn btn-sm btn-flipkart-blue" href="{% url 'product_detail' product.pk %}">View</a></div></div></article>{% endfor %}</div>
     </section>
     {% endfor %}
+    {% endif %}
 
     <section class="catalogue-section" id="products">
         <div class="catalogue-heading"><p class="eyebrow">The collection</p>{% if q %}<h2>Results for &ldquo;{{ q }}&rdquo;</h2>{% else %}<h2>Find your next favourite.</h2>{% endif %}<p>{{ product_count }} product{{ product_count|pluralize }} found. Filter, sort, and make it yours.</p></div>
@@ -72,7 +74,9 @@
             </div>
         </div>
     </section>
+    {% if not is_search_results %}
     <section class="closing-banner"><div><p class="eyebrow">Keep exploring</p><h2>Good things are<br>closer than you think.</h2></div><a href="#products" class="btn outline-light-button">Shop the collection <span>&#8594;</span></a></section>
+    {% endif %}
 </div>
 {% endblock %}
 

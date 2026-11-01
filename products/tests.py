@@ -49,6 +49,28 @@ class ReviewAccessTests(TestCase):
         self.assertContains(response, "Headphones")
         self.assertEqual(self.client.get(reverse("product_detail", args=[self.product.pk])).status_code, 200)
 
+    def test_search_hides_homepage_sections_and_keeps_search_state(self):
+        response = self.client.get(reverse("index"), {"q": "head"})
+
+        self.assertContains(response, "Results for")
+        self.assertContains(response, "Headphones")
+        self.assertContains(response, 'value="head"', html=False)
+        self.assertNotContains(response, "Everyday things,")
+        self.assertNotContains(response, "Shop by mood")
+        self.assertNotContains(response, "Keep exploring")
+
+    def test_empty_search_restores_homepage_sections(self):
+        response = self.client.get(reverse("index"), {"q": ""})
+
+        self.assertContains(response, "Everyday things,")
+        self.assertContains(response, "Shop by mood")
+
+    def test_search_with_no_matches_shows_empty_state_without_homepage_sections(self):
+        response = self.client.get(reverse("index"), {"q": "not-a-product"})
+
+        self.assertContains(response, "No products found")
+        self.assertNotContains(response, "Everyday things,")
+
     def test_purchaser_can_submit_one_verified_review(self):
         order = Order.objects.create(customer=self.customer)
         OrderItem.objects.create(order=order, product=self.product, quantity=1, price=self.product.price)
