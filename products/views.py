@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from customers.models import WishlistItem
 from orders.models import Order, OrderItem
 
-from .forms import ProductForm, ReviewForm
+from .forms import ProductForm, RecommendationForm, ReviewForm
 from .models import Product, Review
 from orders.models import EMIPlan
 
@@ -145,6 +145,29 @@ def index(request):
         "featured_products": featured_products,
         "category_sections": category_sections,
         "wishlist_ids": wishlist_ids_for(request.user),
+    })
+
+
+def smart_assistant(request):
+    """Recommend one in-stock item using only recorded catalogue and review data."""
+    categories = Product.objects.order_by("category").values_list("category", "category").distinct()
+    form = RecommendationForm(request.POST or None, categories=categories)
+    recommendation = None
+    searched = request.method == "POST"
+    if request.method == "POST" and form.is_valid():
+        recommendation = with_ratings(
+            Product.objects.filter(
+                category=form.cleaned_data["category"],
+                price__gte=form.cleaned_data["min_budget"],
+                price__lte=form.cleaned_data["max_budget"],
+                is_available=True,
+                stock_quantity__gt=0,
+            )
+        ).order_by("-rating_average", "-review_count", "-stock_quantity", "-created_at").first()
+    return render(request, "products/smart_assistant.html", {
+        "form": form,
+        "recommendation": recommendation,
+        "searched": searched,
     })
 
 

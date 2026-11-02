@@ -81,3 +81,28 @@ class ReviewAccessTests(TestCase):
         self.assertTrue(review.verified_purchase)
         with self.assertRaises(IntegrityError):
             Review.objects.create(product=self.product, user=self.user, rating=4)
+
+
+class SmartAssistantTests(TestCase):
+    def setUp(self):
+        self.best = Product.objects.create(name="Best phone", category="Mobiles", price="9000.00", stock_quantity=4)
+        self.other = Product.objects.create(name="Other phone", category="Mobiles", price="8500.00", stock_quantity=4)
+        self.outside_budget = Product.objects.create(name="Premium phone", category="Mobiles", price="25000.00", stock_quantity=4)
+        user = User.objects.create_user(username="reviewer", password="safe-password-123")
+        Review.objects.create(product=self.best, user=user, rating=5, verified_purchase=True)
+
+    def test_recommends_exactly_one_in_stock_product_in_budget(self):
+        response = self.client.post(reverse("smart_assistant"), {"category": "Mobiles", "budget_range": "5000-10000"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["recommendation"], self.best)
+        self.assertContains(response, "Best phone")
+        self.assertNotContains(response, "Premium phone")
+
+    def test_custom_budget_requires_valid_range(self):
+        response = self.client.post(reverse("smart_assistant"), {"category": "Mobiles", "budget_range": "custom", "min_budget": "10000", "max_budget": "5000"})
+        self.assertContains(response, "Minimum budget cannot be greater than maximum budget.")
+        self.assertIsNone(response.context["recommendation"])
+
+    def test_no_match_shows_clear_message(self):
+        response = self.client.post(reverse("smart_assistant"), {"category": "Mobiles", "budget_range": "0-5000"})
+        self.assertContains(response, "No suitable product found in your selected budget")

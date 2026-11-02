@@ -82,6 +82,11 @@
         {% block content %}{% endblock %}
     </main>
 
+    <a class="smart-assistant-fab" href="{% url 'smart_assistant' %}" aria-label="Open Smart Product Assistant" data-tooltip="Smart Product Assistant">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1M4 13h3v6H5a1 1 0 0 1-1-1v-5Zm13 0h3v5a1 1 0 0 1-1 1h-2v-6Zm-3 7h-4"/></svg>
+        <span class="visually-hidden">Smart Product Assistant</span>
+    </a>
+
     <footer class="site-footer">
         <div class="site-width footer-grid">
             <div class="footer-brand">

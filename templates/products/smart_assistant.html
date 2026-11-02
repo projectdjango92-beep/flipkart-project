@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Product Assistant | Bharat Mart{% endblock %}
+
+{% block content %}
+<section class="assistant-page site-width">
+    <a class="assistant-back" href="{% url 'index' %}" onclick="if (window.history.length > 1) { window.history.back(); return false; }">← Back to shopping</a>
+    <div class="assistant-intro">
+        <p class="eyebrow">Bharat Mart assistant</p>
+        <h1>Find the Best Product for You</h1>
+        <p>Tell us what you need and your budget. We will find one of the best products for you.</p>
+    </div>
+    <div class="assistant-layout">
+        <form method="post" class="assistant-form" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="assistant-errors">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="assistant-field"><label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>{{ form.category }}{{ form.category.errors }}</div>
+            <div class="assistant-field"><label for="{{ form.budget_range.id_for_label }}">{{ form.budget_range.label }}</label>{{ form.budget_range }}{{ form.budget_range.errors }}</div>
+            <div class="assistant-custom-budget">
+                <div class="assistant-field"><label for="{{ form.min_budget.id_for_label }}">{{ form.min_budget.label }}</label>{{ form.min_budget }}{{ form.min_budget.errors }}</div>
+                <div class="assistant-field"><label for="{{ form.max_budget.id_for_label }}">{{ form.max_budget.label }}</label>{{ form.max_budget }}{{ form.max_budget.errors }}</div>
+            </div>
+            <button class="btn assistant-submit" type="submit">Get Best Recommendation</button>
+        </form>
+        {% if searched %}
+            <section class="assistant-result" aria-live="polite">
+            {% if recommendation %}
+                <p class="eyebrow">Your best match</p>
+                {% if recommendation.image %}<img src="{{ recommendation.image.url }}" alt="{{ recommendation.name }}">{% endif %}
+                <h2>{{ recommendation.name }}</h2>
+                <p class="assistant-price">₹{{ recommendation.price }}</p>
+                <p class="assistant-rating">★ {{ recommendation.average_rating|floatformat:1 }} <span>({{ recommendation.total_reviews }} review{{ recommendation.total_reviews|pluralize }})</span></p>
+                <p class="assistant-reason">Selected because it is in stock, fits your budget, and has the strongest customer rating and review count among the matching products.</p>
+                <a class="btn" href="{% url 'product_detail' recommendation.pk %}">View Product</a>
+                <a class="assistant-try-again" href="{% url 'smart_assistant' %}">Try Another Budget</a>
+            {% else %}
+                <h2>No suitable product found</h2>
+                <p>No suitable product found in your selected budget. Please try another budget.</p>
+                <a class="assistant-try-again" href="{% url 'smart_assistant' %}">Try Another Budget</a>
+            {% endif %}
+        {% else %}
+            <aside class="assistant-result assistant-placeholder"><span aria-hidden="true">✦</span><h2>Thoughtful recommendations</h2><p>We compare the products currently available in our catalogue using genuine customer ratings and reviews.</p></aside>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

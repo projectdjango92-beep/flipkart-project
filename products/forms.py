@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Column, Layout, Row, Submit
@@ -53,3 +55,44 @@ class ReviewForm(forms.ModelForm):
         if rating not in range(1, 6):
             raise forms.ValidationError("Please choose a rating from 1 to 5.")
         return rating
+
+
+class RecommendationForm(forms.Form):
+    BUDGET_CHOICES = (
+        ("", "Choose a budget"),
+        ("0-5000", "Under ₹5,000"),
+        ("5000-10000", "₹5,000 – ₹10,000"),
+        ("10000-20000", "₹10,000 – ₹20,000"),
+        ("20000-30000", "₹20,000 – ₹30,000"),
+        ("30000-50000", "₹30,000 – ₹50,000"),
+        ("custom", "Custom budget"),
+    )
+
+    category = forms.ChoiceField(label="What do you want to buy?")
+    budget_range = forms.ChoiceField(label="What is your budget?", choices=BUDGET_CHOICES)
+    min_budget = forms.DecimalField(label="Minimum budget", min_value=Decimal("0"), required=False, decimal_places=2, max_digits=10)
+    max_budget = forms.DecimalField(label="Maximum budget", min_value=Decimal("0"), required=False, decimal_places=2, max_digits=10)
+
+    def __init__(self, *args, categories=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["category"].choices = [("", "Choose a category")] + list(categories)
+        self.fields["category"].widget.attrs["class"] = "assistant-select"
+        self.fields["budget_range"].widget.attrs["class"] = "assistant-select"
+        for name in ("min_budget", "max_budget"):
+            self.fields[name].widget.attrs.update({"class": "assistant-input", "placeholder": "₹", "inputmode": "decimal"})
+
+    def clean(self):
+        cleaned = super().clean()
+        budget_range = cleaned.get("budget_range")
+        if not budget_range:
+            return cleaned
+        if budget_range == "custom":
+            minimum, maximum = cleaned.get("min_budget"), cleaned.get("max_budget")
+            if minimum is None or maximum is None:
+                raise forms.ValidationError("Enter both a minimum and maximum budget.")
+        else:
+            minimum, maximum = (Decimal(value) for value in budget_range.split("-"))
+            cleaned["min_budget"], cleaned["max_budget"] = minimum, maximum
+        if minimum > maximum:
+            raise forms.ValidationError("Minimum budget cannot be greater than maximum budget.")
+        return cleaned

@@ -5,6 +5,8 @@ from . import views
 
 urlpatterns = [
 
+    path("smart-assistant/", views.smart_assistant, name="smart_assistant"),
+
     path(
         "",
         views.product_list,
